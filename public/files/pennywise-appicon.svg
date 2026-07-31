@@ -1,0 +1,28 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#6D28D9"/>
+    </linearGradient>
+    <linearGradient id="gold7" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FCD34D"/>
+      <stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="112" height="112" rx="28" fill="url(#tile)"/>
+  <!-- ear tufts -->
+  <path d="M45 33 L37 19 L53 30 Z" fill="#F5F3FF"/>
+  <path d="M75 33 L83 19 L67 30 Z" fill="#F5F3FF"/>
+  <!-- head/body -->
+  <path d="M60 25 C82 25 92 41 92 62 C92 85 78 99 60 99 C42 99 28 85 28 62 C28 41 38 25 60 25 Z" fill="#F5F3FF"/>
+  <!-- eyes -->
+  <circle cx="48" cy="55" r="12" fill="#6D28D9"/>
+  <circle cx="72" cy="55" r="12" fill="#6D28D9"/>
+  <circle cx="50" cy="56" r="5" fill="#F5F3FF"/>
+  <circle cx="70" cy="56" r="5" fill="#F5F3FF"/>
+  <!-- beak -->
+  <path d="M60 65 L66 70 L60 76 L54 70 Z" fill="url(#gold7)"/>
+  <!-- coin belly -->
+  <circle cx="60" cy="85" r="10" fill="url(#gold7)"/>
+  <text x="60" y="90" font-family="Poppins, sans-serif" font-size="12" font-weight="700" fill="#B45309" text-anchor="middle">₨</text>
+</svg>

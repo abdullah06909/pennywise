@@ -1,0 +1,30 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="p1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#6D28D9"/>
+    </linearGradient>
+    <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FCD34D"/>
+      <stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+  </defs>
+  <!-- ear tufts -->
+  <path d="M40 24 L31 7 L50 20 Z" fill="url(#p1)"/>
+  <path d="M80 24 L89 7 L70 20 Z" fill="url(#p1)"/>
+  <!-- head / body -->
+  <path d="M60 15 C87 15 100 35 100 61 C100 90 82 108 60 108 C38 108 20 90 20 61 C20 35 33 15 60 15 Z" fill="url(#p1)"/>
+  <!-- eyes -->
+  <circle cx="45" cy="53" r="15" fill="#FFFFFF"/>
+  <circle cx="75" cy="53" r="15" fill="#FFFFFF"/>
+  <circle cx="48" cy="55" r="6.5" fill="#4C1D95"/>
+  <circle cx="72" cy="55" r="6.5" fill="#4C1D95"/>
+  <circle cx="50" cy="52.5" r="2" fill="#FFFFFF"/>
+  <circle cx="74" cy="52.5" r="2" fill="#FFFFFF"/>
+  <!-- beak -->
+  <path d="M60 66 L67 72 L60 79 L53 72 Z" fill="url(#g1)"/>
+  <!-- coin belly -->
+  <circle cx="60" cy="90" r="13" fill="url(#g1)"/>
+  <circle cx="60" cy="90" r="13" fill="none" stroke="#D97706" stroke-width="1.5" opacity="0.45"/>
+  <text x="60" y="96" font-family="Georgia, 'Times New Roman', serif" font-size="15" font-weight="700" fill="#B45309" text-anchor="middle">P</text>
+</svg>

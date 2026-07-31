@@ -1,0 +1,17 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="p2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#6D28D9"/>
+    </linearGradient>
+  </defs>
+  <!-- coin body -->
+  <circle cx="60" cy="60" r="48" fill="url(#p2)"/>
+  <!-- ridged coin edge -->
+  <circle cx="60" cy="60" r="40" fill="none" stroke="#FFFFFF" stroke-width="2.5" opacity="0.35"/>
+  <!-- P letterform in negative-ish white -->
+  <path d="M46 36 L46 86 L56 86 L56 68 L64 68 C76 68 84 61 84 52 C84 43 76 36 64 36 Z M56 45 L63 45 C69 45 73 47.5 73 52 C73 56.5 69 59 63 59 L56 59 Z"
+        fill="#FFFFFF"/>
+  <!-- small coin-slot detail suggesting a savings slot -->
+  <rect x="52" y="26" width="16" height="4" rx="2" fill="#FFFFFF" opacity="0.55"/>
+</svg>

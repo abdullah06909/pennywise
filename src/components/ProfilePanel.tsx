@@ -3,8 +3,10 @@ import type { User } from 'firebase/auth';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, LogOut, Plus, Trash2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { IncomeEntry } from '../types';
+import { IncomeEntry, Account } from '../types';
+import { ACCOUNT_META } from '../lib/accounts';
 import { Avatar } from './Avatar';
+import { cn } from '../lib/utils';
 
 interface ProfilePanelProps {
   isOpen: boolean;
@@ -12,6 +14,7 @@ interface ProfilePanelProps {
   user: User;
   incomeEntries: IncomeEntry[];
   balance: number;
+  accounts: Account[];
   onAddIncome: (entry: Omit<IncomeEntry, 'id'>) => void;
   onDeleteIncome: (id: string) => void;
   onLogout: () => void;
@@ -23,6 +26,7 @@ export const ProfilePanel: React.FC<ProfilePanelProps> = ({
   user,
   incomeEntries,
   balance,
+  accounts,
   onAddIncome,
   onDeleteIncome,
   onLogout,
@@ -30,12 +34,13 @@ export const ProfilePanel: React.FC<ProfilePanelProps> = ({
   const [label, setLabel] = useState('');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [accountId, setAccountId] = useState<Account['id']>('cash');
 
   const handleAddIncome = (e: React.FormEvent) => {
     e.preventDefault();
     const val = parseFloat(amount);
     if (!label.trim() || isNaN(val)) return;
-    onAddIncome({ label: label.trim(), amount: val, date });
+    onAddIncome({ label: label.trim(), amount: val, date, accountId });
     setLabel('');
     setAmount('');
   };
@@ -151,6 +156,28 @@ export const ProfilePanel: React.FC<ProfilePanelProps> = ({
                       onChange={(e) => setDate(e.target.value)}
                       className="px-4 py-3 bg-white/50 border border-white/40 rounded-2xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-accent-purple/20 transition-all"
                     />
+                  </div>
+                  <div className="flex gap-2">
+                    {accounts.map((acc) => {
+                      const meta = ACCOUNT_META[acc.id];
+                      const Icon = meta.icon;
+                      return (
+                        <button
+                          key={acc.id}
+                          type="button"
+                          onClick={() => setAccountId(acc.id)}
+                          className={cn(
+                            "flex-1 py-2 px-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5",
+                            accountId === acc.id
+                              ? "bg-white text-accent-purple border-white shadow-md"
+                              : "bg-white/30 border-white/40 text-slate-500 hover:bg-white/50"
+                          )}
+                        >
+                          <Icon size={12} />
+                          {meta.name}
+                        </button>
+                      );
+                    })}
                   </div>
                   <div className="flex gap-3">
                     <div className="relative flex-1">

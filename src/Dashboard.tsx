@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   BarChart3,
   ListFilter,
+  Landmark,
   Plus,
   AlertCircle
 } from 'lucide-react';
@@ -23,9 +24,11 @@ import { DashboardCharts } from './components/DashboardCharts';
 import { BudgetSettings } from './components/BudgetSettings';
 import { ProfilePanel } from './components/ProfilePanel';
 import { DateFilter } from './components/DateFilter';
+import { AccountsTab } from './components/AccountsTab';
 import { storage } from './lib/storage';
 import { useAuth } from './lib/AuthContext';
-import { Expense, Category, IncomeEntry, Budget } from './types';
+import { accountName } from './lib/accounts';
+import { Expense, Category, IncomeEntry, Budget, Account, Transfer, AccountId } from './types';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { cn } from './lib/utils';
 
@@ -35,11 +38,13 @@ export function Dashboard({ user }: { user: User }) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [income, setIncome] = useState<IncomeEntry[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isBudgetOpen, setIsBudgetOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>();
-  const [activeTab, setActiveTab] = useState<'tracker' | 'summary' | 'categories'>('tracker');
+  const [activeTab, setActiveTab] = useState<'tracker' | 'summary' | 'categories' | 'accounts'>('tracker');
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
 
   const [dateRange, setDateRange] = useState({
@@ -56,6 +61,19 @@ export function Dashboard({ user }: { user: User }) {
   // Live income feed
   useEffect(() => {
     const unsubscribe = storage.subscribeIncome(user.uid, setIncome);
+    return unsubscribe;
+  }, [user.uid]);
+
+  // Accounts: seed the 3 fixed accounts once (no-op if they already exist), then subscribe
+  useEffect(() => {
+    storage.ensureDefaultAccounts(user.uid);
+    const unsubscribe = storage.subscribeAccounts(user.uid, setAccounts);
+    return unsubscribe;
+  }, [user.uid]);
+
+  // Live transfers feed
+  useEffect(() => {
+    const unsubscribe = storage.subscribeTransfers(user.uid, setTransfers);
     return unsubscribe;
   }, [user.uid]);
 
@@ -87,7 +105,7 @@ export function Dashboard({ user }: { user: User }) {
             category: rec.category,
             description: rec.description + ' (Recurring)',
             amount: rec.amount,
-            paymentMode: rec.paymentMode,
+            accountId: rec.accountId,
             notes: rec.notes,
             isRecurring: true
           }).then(() => storage.markRecurringProcessed(user.uid, rec.id, currentMonthStr));
@@ -124,12 +142,24 @@ export function Dashboard({ user }: { user: User }) {
     };
   }, [expenses, income, dateRange]);
 
-  // True running balance: all income ever minus all expenses ever, independent of dateRange
+  // Per-account balance: starting balance + income to that account - expenses from that account,
+  // adjusted for transfers in/out. Independent of dateRange (always all-time).
+  const accountBalances = useMemo(() => {
+    const balances: Record<AccountId, number> = { bank: 0, easypaisa: 0, cash: 0 };
+    accounts.forEach((acc) => { balances[acc.id] = acc.startingBalance; });
+    income.forEach((inc) => { balances[inc.accountId] += inc.amount; });
+    expenses.forEach((exp) => { balances[exp.accountId] -= exp.amount; });
+    transfers.forEach((t) => {
+      balances[t.fromAccountId] -= t.amount;
+      balances[t.toAccountId] += t.amount;
+    });
+    return balances;
+  }, [accounts, income, expenses, transfers]);
+
+  // True running balance: sum of all account balances (starting balances + all-time income/expenses/transfers)
   const allTimeBalance = useMemo(() => {
-    const totalIncome = income.reduce((sum, inc) => sum + inc.amount, 0);
-    const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-    return totalIncome - totalExpenses;
-  }, [income, expenses]);
+    return Object.values(accountBalances).reduce((sum, b) => sum + b, 0);
+  }, [accountBalances]);
 
   const categorySummary = useMemo(() => {
     const summary: Record<Category, number> = {
@@ -157,7 +187,7 @@ export function Dashboard({ user }: { user: User }) {
         category: data.category,
         description: data.description,
         amount: data.amount,
-        paymentMode: data.paymentMode,
+        accountId: data.accountId,
         notes: data.notes,
         dayOfMonth: parseISO(data.date).getDate(),
         lastProcessedMonth: format(parseISO(data.date), 'yyyy-MM')
@@ -182,14 +212,26 @@ export function Dashboard({ user }: { user: User }) {
     await storage.deleteIncome(user.uid, id);
   };
 
+  const addTransfer = async (data: Omit<Transfer, 'id'>) => {
+    await storage.addTransfer(user.uid, data);
+  };
+
+  const deleteTransfer = async (id: string) => {
+    await storage.deleteTransfer(user.uid, id);
+  };
+
+  const updateAccountStartingBalance = async (id: AccountId, startingBalance: number) => {
+    await storage.updateAccountStartingBalance(user.uid, id, startingBalance);
+  };
+
   const exportCSV = () => {
-    const headers = ['Date', 'Category', 'Description', 'Amount', 'Payment Mode', 'Notes'];
+    const headers = ['Date', 'Category', 'Description', 'Amount', 'Account', 'Notes'];
     const rows = expenses.map(e => [
       e.date,
       e.category,
       e.description,
       e.amount,
-      e.paymentMode,
+      accountName(e.accountId),
       e.notes
     ]);
 
@@ -306,6 +348,7 @@ export function Dashboard({ user }: { user: User }) {
                   </div>
                   <ExpenseTable
                     expenses={filteredExpenses.slice(0, 10)}
+                    accounts={accounts}
                     onEditExpense={(expense) => {
                       setEditingExpense(expense);
                       setIsAddOpen(true);
@@ -476,11 +519,30 @@ export function Dashboard({ user }: { user: User }) {
 
               <ExpenseTable
                 expenses={filteredExpenses}
+                accounts={accounts}
                 onEditExpense={(expense) => {
                   setEditingExpense(expense);
                   setIsAddOpen(true);
                 }}
                 onDeleteExpense={deleteExpense}
+              />
+            </motion.div>
+          )}
+
+          {activeTab === 'accounts' && (
+            <motion.div
+              key="accounts"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <AccountsTab
+                accounts={accounts}
+                accountBalances={accountBalances}
+                transfers={transfers}
+                onUpdateStartingBalance={updateAccountStartingBalance}
+                onAddTransfer={addTransfer}
+                onDeleteTransfer={deleteTransfer}
               />
             </motion.div>
           )}
@@ -493,6 +555,7 @@ export function Dashboard({ user }: { user: User }) {
           <TabButton active={activeTab === 'tracker'} onClick={() => setActiveTab('tracker')} icon={LayoutDashboard} label="Dashboard" />
           <TabButton active={activeTab === 'summary'} onClick={() => setActiveTab('summary')} icon={BarChart3} label="Insights" />
           <TabButton active={activeTab === 'categories'} onClick={() => setActiveTab('categories')} icon={ListFilter} label="Ledger" />
+          <TabButton active={activeTab === 'accounts'} onClick={() => setActiveTab('accounts')} icon={Landmark} label="Accounts" />
           <div className="w-px h-8 bg-white/20 mx-2"></div>
           <button
             onClick={() => setIsAddOpen(true)}
@@ -509,6 +572,7 @@ export function Dashboard({ user }: { user: User }) {
         user={user}
         incomeEntries={income}
         balance={allTimeBalance}
+        accounts={accounts}
         onAddIncome={addIncome}
         onDeleteIncome={deleteIncome}
         onLogout={signOutUser}
@@ -523,6 +587,7 @@ export function Dashboard({ user }: { user: User }) {
         onAdd={addExpense}
         onUpdate={updateExpense}
         editExpense={editingExpense}
+        accounts={accounts}
       />
 
       <BudgetSettings

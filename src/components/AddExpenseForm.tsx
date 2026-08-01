@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Calendar, Tag, CreditCard, FileText, Repeat } from 'lucide-react';
-import { Category, PaymentMode, Expense } from '../types';
+import { Plus, X, Calendar, FileText, Repeat } from 'lucide-react';
+import { Category, Expense, Account } from '../types';
+import { ACCOUNT_META } from '../lib/accounts';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
 import { cn } from '../lib/utils';
@@ -11,21 +12,23 @@ interface AddExpenseFormProps {
   onAdd: (expense: Omit<Expense, 'id'>, isRecurring: boolean) => void;
   onUpdate?: (id: string, updatedExpense: Omit<Expense, 'id'>) => void;
   editExpense?: Expense | null;
+  accounts: Account[];
 }
 
-export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({ 
-  isOpen, 
-  onClose, 
+export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
+  isOpen,
+  onClose,
   onAdd,
   onUpdate,
-  editExpense
+  editExpense,
+  accounts
 }) => {
   const [formData, setFormData] = useState({
     date: format(new Date(), 'yyyy-MM-dd'),
     category: 'Food' as Category,
     description: '',
     amount: '',
-    paymentMode: 'Cash' as PaymentMode,
+    accountId: 'cash' as Account['id'],
     notes: '',
   });
 
@@ -38,7 +41,7 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
         category: editExpense.category,
         description: editExpense.description,
         amount: editExpense.amount.toString(),
-        paymentMode: editExpense.paymentMode,
+        accountId: editExpense.accountId,
         notes: editExpense.notes || '',
       });
       setIsRecurring(!!editExpense.isRecurring);
@@ -48,7 +51,7 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
         category: 'Food' as Category,
         description: '',
         amount: '',
-        paymentMode: 'Cash' as PaymentMode,
+        accountId: 'cash' as Account['id'],
         notes: '',
       });
       setIsRecurring(false);
@@ -56,7 +59,6 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   }, [editExpense, isOpen]);
 
   const categories: Category[] = ['Food', 'Transport', 'Bills', 'Shopping', 'Entertainment', 'Others'];
-  const paymentModes: PaymentMode[] = ['Cash', 'Card', 'UPI'];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,7 +85,7 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
         category: 'Food',
         description: '',
         amount: '',
-        paymentMode: 'Cash',
+        accountId: 'cash',
         notes: '',
       });
     }
@@ -209,24 +211,28 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 </div>
 
                 <div className="space-y-3">
-                  <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-2">Settlement Mode</label>
+                  <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-2">Source Account</label>
                   <div className="flex gap-3">
-                    {paymentModes.map((mode) => (
-                      <button
-                        key={mode}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, paymentMode: mode })}
-                        className={cn(
-                          "flex-1 py-4 px-3 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all flex flex-col items-center justify-center gap-2",
-                          formData.paymentMode === mode
-                            ? "bg-white text-accent-purple border-white shadow-xl"
-                            : "bg-white/20 border-white/40 text-slate-500 hover:bg-white/40"
-                        )}
-                      >
-                        <CreditCard size={14} />
-                        {mode}
-                      </button>
-                    ))}
+                    {accounts.map((acc) => {
+                      const meta = ACCOUNT_META[acc.id];
+                      const Icon = meta.icon;
+                      return (
+                        <button
+                          key={acc.id}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, accountId: acc.id })}
+                          className={cn(
+                            "flex-1 py-4 px-3 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all flex flex-col items-center justify-center gap-2",
+                            formData.accountId === acc.id
+                              ? "bg-white text-accent-purple border-white shadow-xl"
+                              : "bg-white/20 border-white/40 text-slate-500 hover:bg-white/40"
+                          )}
+                        >
+                          <Icon size={14} />
+                          {meta.name}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 

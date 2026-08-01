@@ -1,17 +1,19 @@
 import React from 'react';
-import { type Expense, type Category } from '../types';
+import { type Expense, type Account } from '../types';
 import { CategoryTag } from './CategoryTag';
+import { ACCOUNT_META, accountName } from '../lib/accounts';
 import { parseISO, format } from 'date-fns';
 import { cn } from '../lib/utils';
 import { Pencil, Trash2 } from 'lucide-react';
 
 interface ExpenseTableProps {
   expenses: Expense[];
+  accounts: Account[];
   onEditExpense?: (expense: Expense) => void;
   onDeleteExpense?: (id: string) => void;
 }
 
-export const ExpenseTable: React.FC<ExpenseTableProps> = ({ 
+export const ExpenseTable: React.FC<ExpenseTableProps> = ({
   expenses,
   onEditExpense,
   onDeleteExpense
@@ -28,7 +30,7 @@ export const ExpenseTable: React.FC<ExpenseTableProps> = ({
               <th className="px-6 py-6 border-b border-white/30">Category</th>
               <th className="px-6 py-6 border-b border-white/30">Description</th>
               <th className="px-6 py-6 text-right border-b border-white/30">Amount (Rs)</th>
-              <th className="px-6 py-6 border-b border-white/30">Payment Mode</th>
+              <th className="px-6 py-6 border-b border-white/30">Account</th>
               <th className="px-6 py-6 border-b border-white/30">Notes</th>
               {showActions && <th className="px-6 py-6 border-b border-white/30 text-center w-24">Actions</th>}
             </tr>
@@ -58,11 +60,9 @@ export const ExpenseTable: React.FC<ExpenseTableProps> = ({
                   <td className="px-6 py-5">
                     <span className={cn(
                       "px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border shadow-sm",
-                      expense.paymentMode === 'UPI' ? 'bg-indigo-500/10 text-indigo-700 border-indigo-200' :
-                      expense.paymentMode === 'Card' ? 'bg-amber-500/10 text-amber-700 border-amber-200' :
-                      'bg-emerald-500/10 text-emerald-700 border-emerald-200'
+                      ACCOUNT_META[expense.accountId]?.badgeClass ?? 'bg-slate-500/10 text-slate-700 border-slate-200'
                     )}>
-                      {expense.paymentMode}
+                      {accountName(expense.accountId)}
                     </span>
                   </td>
                   <td className="px-6 py-5 text-slate-500 font-medium italic max-w-[200px] truncate group-hover:text-slate-700">

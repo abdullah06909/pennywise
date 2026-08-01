@@ -1,7 +1,21 @@
 
 export type Category = 'Food' | 'Transport' | 'Bills' | 'Shopping' | 'Entertainment' | 'Others';
 
-export type PaymentMode = 'Cash' | 'Card' | 'UPI';
+export type AccountId = 'bank' | 'easypaisa' | 'cash';
+
+export interface Account {
+  id: AccountId;
+  startingBalance: number;
+}
+
+export interface Transfer {
+  id: string;
+  date: string;
+  fromAccountId: AccountId;
+  toAccountId: AccountId;
+  amount: number;
+  note?: string;
+}
 
 export interface Expense {
   id: string;
@@ -9,7 +23,7 @@ export interface Expense {
   category: Category;
   description: string;
   amount: number;
-  paymentMode: PaymentMode;
+  accountId: AccountId;
   notes: string;
   isRecurring?: boolean;
 }
@@ -24,4 +38,5 @@ export interface IncomeEntry {
   date: string;
   label: string;
   amount: number;
+  accountId: AccountId;
 }

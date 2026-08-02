@@ -14,6 +14,8 @@ export const CategoryTag: React.FC<CategoryTagProps> = ({ category, showAmount }
     Bills: 'bg-amber-100 text-amber-700 border-amber-200',
     Shopping: 'bg-indigo-100 text-indigo-700 border-indigo-200',
     Entertainment: 'bg-rose-100 text-rose-700 border-rose-200',
+    Installment: 'bg-violet-100 text-violet-700 border-violet-200',
+    Committee: 'bg-teal-100 text-teal-700 border-teal-200',
     Others: 'bg-slate-100 text-slate-700 border-slate-200',
   };
 

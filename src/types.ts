@@ -1,5 +1,5 @@
 
-export type Category = 'Food' | 'Transport' | 'Bills' | 'Shopping' | 'Entertainment' | 'Others';
+export type Category = 'Food' | 'Transport' | 'Bills' | 'Shopping' | 'Entertainment' | 'Installment' | 'Committee' | 'Others';
 
 export type AccountId = 'bank' | 'easypaisa' | 'cash';
 
@@ -15,6 +15,7 @@ export interface Transfer {
   toAccountId: AccountId;
   amount: number;
   note?: string;
+  createdAt?: number;
 }
 
 export interface Expense {
@@ -26,6 +27,7 @@ export interface Expense {
   accountId: AccountId;
   notes: string;
   isRecurring?: boolean;
+  createdAt?: number;
 }
 
 export interface Budget {
@@ -39,4 +41,5 @@ export interface IncomeEntry {
   label: string;
   amount: number;
   accountId: AccountId;
+  createdAt?: number;
 }

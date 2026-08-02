@@ -23,6 +23,8 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({ expenses }) =>
     Bills: '#f59e0b',
     Shopping: '#6366f1',
     Entertainment: '#f43f5e',
+    Installment: '#8b5cf6',
+    Committee: '#14b8a6',
     Others: '#64748b',
   };
 

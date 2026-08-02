@@ -35,6 +35,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     Bills: 'bg-amber-500',
     Shopping: 'bg-indigo-500',
     Entertainment: 'bg-rose-500',
+    Installment: 'bg-violet-500',
+    Committee: 'bg-teal-500',
     Others: 'bg-slate-500',
   };
 

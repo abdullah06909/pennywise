@@ -58,7 +58,7 @@ export const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     }
   }, [editExpense, isOpen]);
 
-  const categories: Category[] = ['Food', 'Transport', 'Bills', 'Shopping', 'Entertainment', 'Others'];
+  const categories: Category[] = ['Food', 'Transport', 'Bills', 'Shopping', 'Entertainment', 'Installment', 'Committee', 'Others'];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

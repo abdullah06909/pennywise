@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import type { User } from 'firebase/auth';
 import {
   Wallet,
-  ArrowDownCircle,
   ArrowUpCircle,
   Calendar,
   Target,
@@ -66,8 +65,8 @@ export function Dashboard({ user }: { user: User }) {
 
   // Accounts: seed the 3 fixed accounts once (no-op if they already exist), then subscribe
   useEffect(() => {
-    storage.ensureDefaultAccounts(user.uid);
-    const unsubscribe = storage.subscribeAccounts(user.uid, setAccounts);
+    storage.ensureDefaultAccounts(user.uid).catch((err) => console.error('Failed to seed default accounts:', err));
+    const unsubscribe = storage.subscribeAccounts(user.uid, setAccounts, (err) => console.error('Failed to load accounts:', err));
     return unsubscribe;
   }, [user.uid]);
 
@@ -126,21 +125,13 @@ export function Dashboard({ user }: { user: User }) {
       return isWithinInterval(expDate, { start, end });
     });
 
-    const filteredIncome = income.filter(inc => {
-      const incDate = parseISO(inc.date);
-      return isWithinInterval(incDate, { start, end });
-    });
-
     const total = filteredList.reduce((sum, exp) => sum + exp.amount, 0);
-    const incomeTotal = filteredIncome.reduce((sum, inc) => sum + inc.amount, 0);
     return {
       total,
-      incomeTotal,
-      remaining: incomeTotal - total,
       count: filteredList.length,
       filteredList
     };
-  }, [expenses, income, dateRange]);
+  }, [expenses, dateRange]);
 
   // Per-account balance: starting balance + income to that account - expenses from that account,
   // adjusted for transfers in/out. Independent of dateRange (always all-time).
@@ -163,7 +154,7 @@ export function Dashboard({ user }: { user: User }) {
 
   const categorySummary = useMemo(() => {
     const summary: Record<Category, number> = {
-      Food: 0, Transport: 0, Bills: 0, Shopping: 0, Entertainment: 0, Others: 0
+      Food: 0, Transport: 0, Bills: 0, Shopping: 0, Entertainment: 0, Installment: 0, Committee: 0, Others: 0
     };
     totals.filteredList.forEach(exp => {
       summary[exp.category] += exp.amount;
@@ -324,16 +315,21 @@ export function Dashboard({ user }: { user: User }) {
               className="space-y-12"
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                <StatsCard
-                  title="Monthly Intake"
-                  subtitle="Capital Basis"
-                  value={totals.incomeTotal}
-                  variant="primary"
-                  icon={ArrowDownCircle}
-                  onEdit={() => setIsProfileOpen(true)}
-                />
+                <motion.div
+                  whileHover={{ y: -4 }}
+                  onClick={() => setIsProfileOpen(true)}
+                  className="sm:col-span-2 p-8 lg:p-10 rounded-[2.5rem] glass bg-gradient-to-br from-accent-purple to-fuchsia-500 text-white shadow-2xl shadow-accent-purple/40 border-white/10 flex items-center justify-between cursor-pointer transition-all hover:shadow-accent-purple/60"
+                >
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">Capital Reserve</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mt-1">Available Balance</p>
+                    <h2 className="text-5xl font-black tracking-tighter tabular-nums mt-4 leading-none">Rs {allTimeBalance.toLocaleString()}</h2>
+                  </div>
+                  <div className="p-5 rounded-2xl bg-white/15 backdrop-blur-md shrink-0">
+                    <Wallet size={32} />
+                  </div>
+                </motion.div>
                 <StatsCard title="Current Burn" value={totals.total} variant="secondary" icon={RefreshCcw} />
-                <StatsCard title="Treasury Reserve" value={totals.remaining} variant="accent" icon={Wallet} />
                 <StatsCard title="Fiscal Day" value={format(new Date(), 'EEEE, dd')} variant="neutral" icon={Calendar} />
               </div>
 
@@ -357,22 +353,11 @@ export function Dashboard({ user }: { user: User }) {
                   />
                 </div>
 
-                {/* Right Side: Charts & Capital */}
+                {/* Right Side: Charts */}
                 <div className="col-span-12 xl:col-span-4 space-y-10">
                   <div className="glass p-8 bg-white/60 backdrop-blur-3xl border-white shadow-2xl rounded-[2.5rem]">
                     <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-6 text-center">Resource Allocation</h3>
                     <DashboardCharts expenses={totals.filteredList} />
-                  </div>
-
-                  <div className="glass p-12 shadow-2xl border-white/50 text-center space-y-10 bg-white/60 backdrop-blur-3xl rounded-[3rem]">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Capital Reserve</h3>
-                    <div className="py-2">
-                       <h2 className="text-5xl font-black text-slate-900 tracking-tighter tabular-nums leading-none">Rs {totals.remaining.toLocaleString()}</h2>
-                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-4">Remaining Liquidity</p>
-                    </div>
-                    <div className="inline-flex p-8 glass bg-white shadow-xl shadow-accent-purple/10 border-white rounded-[2.5rem] text-accent-purple">
-                      <Wallet size={48} />
-                    </div>
                   </div>
                 </div>
               </div>
@@ -418,7 +403,9 @@ export function Dashboard({ user }: { user: User }) {
                           cat === 'Transport' ? 'bg-blue-400 shadow-blue-400/30' :
                           cat === 'Bills' ? 'bg-amber-400 shadow-amber-400/30' :
                           cat === 'Shopping' ? 'bg-indigo-400 shadow-indigo-400/30' :
-                          cat === 'Entertainment' ? 'bg-rose-400 shadow-rose-400/30' : 'bg-slate-400 shadow-slate-400/30'
+                          cat === 'Entertainment' ? 'bg-rose-400 shadow-rose-400/30' :
+                          cat === 'Installment' ? 'bg-violet-400 shadow-violet-400/30' :
+                          cat === 'Committee' ? 'bg-teal-400 shadow-teal-400/30' : 'bg-slate-400 shadow-slate-400/30'
                         )}>
                           <Wallet size={24} />
                         </div>
@@ -451,7 +438,9 @@ export function Dashboard({ user }: { user: User }) {
                                 cat === 'Transport' ? 'bg-blue-400' :
                                 cat === 'Bills' ? 'bg-amber-400' :
                                 cat === 'Shopping' ? 'bg-indigo-400' :
-                                cat === 'Entertainment' ? 'bg-rose-400' : 'bg-slate-400'
+                                cat === 'Entertainment' ? 'bg-rose-400' :
+                                cat === 'Installment' ? 'bg-violet-400' :
+                                cat === 'Committee' ? 'bg-teal-400' : 'bg-slate-400'
                               )
                             )}
                           />
@@ -491,7 +480,7 @@ export function Dashboard({ user }: { user: User }) {
                       onClear={() => setDateRange({ start: '', end: '' })}
                     />
                     <div className="flex gap-2 p-2 glass bg-white/40 rounded-2xl overflow-x-auto no-scrollbar">
-                         {['Food', 'Transport', 'Bills', 'Shopping', 'Entertainment', 'Others'].map((cat) => (
+                         {['Food', 'Transport', 'Bills', 'Shopping', 'Entertainment', 'Installment', 'Committee', 'Others'].map((cat) => (
                            <button
                              key={cat}
                              onClick={() => setSelectedCategory(selectedCategory === cat ? undefined : cat as Category)}

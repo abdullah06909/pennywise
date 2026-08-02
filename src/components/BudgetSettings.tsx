@@ -12,7 +12,7 @@ interface BudgetSettingsProps {
 }
 
 export const BudgetSettings: React.FC<BudgetSettingsProps> = ({ isOpen, onClose, budgets, onSave }) => {
-  const categories: Category[] = ['Food', 'Transport', 'Bills', 'Shopping', 'Entertainment', 'Others'];
+  const categories: Category[] = ['Food', 'Transport', 'Bills', 'Shopping', 'Entertainment', 'Installment', 'Committee', 'Others'];
   const [localBudgets, setLocalBudgets] = useState<Budget[]>(
     categories.map(cat => budgets.find(b => b.category === cat) || { category: cat, limit: 0 })
   );
@@ -72,7 +72,9 @@ export const BudgetSettings: React.FC<BudgetSettingsProps> = ({ isOpen, onClose,
                       budget.category === 'Transport' ? 'bg-blue-400 shadow-blue-400/30' :
                       budget.category === 'Bills' ? 'bg-amber-400 shadow-amber-400/30' :
                       budget.category === 'Shopping' ? 'bg-indigo-400 shadow-indigo-400/30' :
-                      budget.category === 'Entertainment' ? 'bg-rose-400 shadow-rose-400/30' : 'bg-slate-400'
+                      budget.category === 'Entertainment' ? 'bg-rose-400 shadow-rose-400/30' :
+                      budget.category === 'Installment' ? 'bg-violet-400 shadow-violet-400/30' :
+                      budget.category === 'Committee' ? 'bg-teal-400 shadow-teal-400/30' : 'bg-slate-400'
                     )}></div>
                     <span className="text-xs font-black uppercase tracking-widest text-slate-700">{budget.category}</span>
                   </div>

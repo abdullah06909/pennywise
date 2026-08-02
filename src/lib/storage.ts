@@ -37,6 +37,15 @@ function normalizeAccountId(raw: LegacyAccountFields): AccountId {
   return 'cash';
 }
 
+// Firestore only orders by `date`; entries sharing a date otherwise come back in
+// arbitrary document-ID order. Break ties by creation time (newest first) so same-day
+// entries stay in the sequence they were actually added. Docs without `createdAt`
+// (written before this field existed) fall back to 0 and sort last within their date.
+function byDateThenCreatedAt<T extends { date: string; createdAt?: number }>(a: T, b: T): number {
+  if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+  return (b.createdAt ?? 0) - (a.createdAt ?? 0);
+}
+
 const userDoc = (uid: string) => doc(db, 'users', uid);
 const expensesCol = (uid: string) => collection(db, 'users', uid, 'expenses');
 const recurringCol = (uid: string) => collection(db, 'users', uid, 'recurring');
@@ -53,7 +62,7 @@ export const storage = {
       (snap) => onChange(snap.docs.map((d) => {
         const data = d.data() as Omit<Expense, 'id'> & LegacyAccountFields;
         return { id: d.id, ...data, accountId: normalizeAccountId(data) };
-      })),
+      }).sort(byDateThenCreatedAt)),
       onError,
     );
   },
@@ -70,7 +79,7 @@ export const storage = {
   },
 
   async addExpense(uid: string, expense: Omit<Expense, 'id'>): Promise<string> {
-    const ref = await addDoc(expensesCol(uid), expense);
+    const ref = await addDoc(expensesCol(uid), { ...expense, createdAt: Date.now() });
     return ref.id;
   },
 
@@ -97,13 +106,13 @@ export const storage = {
       (snap) => onChange(snap.docs.map((d) => {
         const data = d.data() as Omit<IncomeEntry, 'id'> & LegacyAccountFields;
         return { id: d.id, ...data, accountId: data.accountId ?? 'cash' };
-      })),
+      }).sort(byDateThenCreatedAt)),
       onError,
     );
   },
 
   async addIncome(uid: string, entry: Omit<IncomeEntry, 'id'>): Promise<string> {
-    const ref = await addDoc(incomeCol(uid), entry);
+    const ref = await addDoc(incomeCol(uid), { ...entry, createdAt: Date.now() });
     return ref.id;
   },
 
@@ -147,13 +156,13 @@ export const storage = {
     const q = query(transfersCol(uid), orderBy('date', 'desc'));
     return onSnapshot(
       q,
-      (snap) => onChange(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Transfer, 'id'>) }))),
+      (snap) => onChange(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Transfer, 'id'>) })).sort(byDateThenCreatedAt)),
       onError,
     );
   },
 
   async addTransfer(uid: string, transfer: Omit<Transfer, 'id'>): Promise<string> {
-    const ref = await addDoc(transfersCol(uid), transfer);
+    const ref = await addDoc(transfersCol(uid), { ...transfer, createdAt: Date.now() });
     return ref.id;
   },
 

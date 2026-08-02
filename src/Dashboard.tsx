@@ -26,7 +26,6 @@ import { DateFilter } from './components/DateFilter';
 import { AccountsTab } from './components/AccountsTab';
 import { storage } from './lib/storage';
 import { useAuth } from './lib/AuthContext';
-import { accountName } from './lib/accounts';
 import { Expense, Category, IncomeEntry, Budget, Account, Transfer, AccountId } from './types';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { cn } from './lib/utils';
@@ -215,28 +214,16 @@ export function Dashboard({ user }: { user: User }) {
     await storage.updateAccountStartingBalance(user.uid, id, startingBalance);
   };
 
-  const exportCSV = () => {
-    const headers = ['Date', 'Category', 'Description', 'Amount', 'Account', 'Notes'];
-    const rows = expenses.map(e => [
-      e.date,
-      e.category,
-      e.description,
-      e.amount,
-      accountName(e.accountId),
-      e.notes
-    ]);
-
-    const csvContent = "data:text/csv;charset=utf-8,"
-      + headers.join(",") + "\n"
-      + rows.map(r => r.join(",")).join("\n");
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `PennyWise_Export_${format(new Date(), 'yyyy_MM_dd')}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const exportExcel = async () => {
+    const { exportExpensesToExcel } = await import('./lib/exportExcel');
+    const totalIncome = income.reduce((sum, inc) => sum + inc.amount, 0);
+    const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+    await exportExpensesToExcel(expenses, {
+      totalIncome,
+      totalExpenses,
+      availableBalance: allTimeBalance,
+      accountBalances,
+    });
   };
 
   const filteredExpenses = useMemo(() => {
@@ -281,10 +268,10 @@ export function Dashboard({ user }: { user: User }) {
                 <Target size={14} /> Budgets
               </button>
               <button
-                onClick={exportCSV}
+                onClick={exportExcel}
                 className="flex items-center gap-2 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-accent-purple bg-white/50 hover:bg-white/80 rounded-xl transition-all border border-white/40 shadow-sm"
               >
-                <Download size={14} /> Export CSV
+                <Download size={14} /> Export Excel
               </button>
               <button
                 onClick={() => setIsAddOpen(true)}
